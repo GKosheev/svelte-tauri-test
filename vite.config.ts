@@ -1,31 +1,17 @@
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
-import sveltePreprocess from "svelte-preprocess";
 import { internalIpV4 } from "internal-ip";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 
-// https://vitejs.dev/config/
 export default defineConfig(async () => {
   const host = await internalIpV4();
-
-  /** @type {import('vite').UserConfig} */
-  const config = {
-    plugins: [
-      svelte({
-        preprocess: [
-          sveltePreprocess({
-            typescript: true,
-          }),
-        ],
-      }),
-    ],
-
-    // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
+  return {
+    plugins: [svelte()],
     // prevent vite from obscuring rust errors
-    // clearScreen: false,
-    // tauri expects a fixed port, fail if that port is not available
+    clearScreen: false,
     server: {
-      host: "0.0.0.0",
+      host: "0.0.0.0", // listen on all addresses
       port: 5173,
+      // Tauri expects a fixed port, fail if that port is not available
       strictPort: true,
       hmr: {
         protocol: "ws",
@@ -33,17 +19,17 @@ export default defineConfig(async () => {
         port: 5183,
       },
     },
-    // to make use of `TAURI_DEBUG` and other env variables
-    // https://tauri.studio/v1/api/config#buildconfig.beforedevcommand
+    // to make use of `TAURI_PLATFORM`, `TAURI_ARCH`, `TAURI_FAMILY`,
+    // `TAURI_PLATFORM_VERSION`, `TAURI_PLATFORM_TYPE` and `TAURI_DEBUG`
+    // env variables
     envPrefix: ["VITE_", "TAURI_"],
-    // build: {
-    //   // Tauri supports es2021
-    target: process.env.TAURI_PLATFORM == "windows" ? "chrome105" : "safari13",
-    //   // don't minify for debug builds
-    minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
-    //   // produce sourcemaps for debug builds
-    sourcemap: !!process.env.TAURI_DEBUG,
-    // },
+    build: {
+      // Tauri supports es2021
+      target: ["es2021", "chrome100", "safari13"],
+      // don't minify for debug builds
+      minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
+      // produce sourcemaps for debug builds
+      sourcemap: !!process.env.TAURI_DEBUG,
+    },
   };
-  return config;
 });
